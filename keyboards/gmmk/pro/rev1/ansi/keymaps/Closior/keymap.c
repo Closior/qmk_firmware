@@ -70,3 +70,22 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     return false;
 }
 #endif // ENCODER_ENABLE
+
+void rgb_matrix_indicators_kb(void) {
+    static uint32_t cycle_led_timer = 0;
+    static uint8_t  current_hue     = 200;
+	
+    if (host_keyboard_led_state().caps_lock) {
+        if (timer_elapsed32(cycle_led_timer) > 128) {
+            current_hue     = current_hue == 200 ? 250 : 200;
+            cycle_led_timer = timer_read32();
+        }
+        HSV tempHSV = {.h = current_hue, .s = rgb_matrix_get_sat(), .v = rgb_matrix_get_val()};
+        RGB tempRGB = hsv_to_rgb(tempHSV);
+		for (uint8_t i = 0; i < DRIVER_LED_TOTAL; ++i) {
+			if (HAS_ANY_FLAGS(g_led_config.flags[i], LED_FLAG_UNDERGLOW)) {
+			  rgb_matrix_set_color(i, tempRGB.r, tempRGB.g, tempRGB.b);
+			}
+        }
+    }
+}
